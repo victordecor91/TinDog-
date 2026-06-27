@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>TinDog 🐾</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    body{background:#F0EDE8;font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;justify-content:center;align-items:flex-start;}
+    input{outline:none;font-family:inherit;}
+    button{font-family:inherit;}
+    ::-webkit-scrollbar{display:none;}
+    .card-swipe{transition:transform 0.38s cubic-bezier(.4,2,.6,1),opacity 0.38s;}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useRef,useEffect} = React;
+
+/* ── PETS DATA with real Unsplash photos ── */
+const PETS = [
+  {id:1,name:"Luna",age:2,breed:"Golden Retriever",type:"dog",distance:"2 km",
+   bio:"J'adore jouer à la balle et les balades en forêt 🌲 Très sociable avec les autres chiens.",
+   verified:true,pedigree:true,
+   photo:"https://images.unsplash.com/photo-1552053831-71594a27632d?w=500&q=80",
+   owner:"Sophie M."},
+  {id:2,name:"Milo",age:3,breed:"Bouledogue Français",type:"dog",distance:"5 km",
+   bio:"Champion de siestes et de câlins. Cherche une âme sœur douce et patiente.",
+   verified:false,pedigree:true,
+   photo:"https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=500&q=80",
+   owner:"Thomas L."},
+  {id:3,name:"Nala",age:1,breed:"Siberian Husky",type:"dog",distance:"8 km",
+   bio:"Énergique, joueuse, et un peu sauvage 🐺 Adore la neige et les grandes randonnées.",
+   verified:true,pedigree:true,
+   photo:"https://images.unsplash.com/photo-1605568427561-40dd23c2acea?w=500&q=80",
+   owner:"Clara B."},
+  {id:4,name:"Cléo",age:4,breed:"Chat Persan",type:"cat",distance:"1 km",
+   bio:"Princesse en recherche de compagnie raffinée ✨ Très calme, adore les caresses.",
+   verified:true,pedigree:false,
+   photo:"https://images.unsplash.com/photo-1518791841217-8f162f1912da?w=500&q=80",
+   owner:"Marie P."},
+  {id:5,name:"Simba",age:2,breed:"Maine Coon",type:"cat",distance:"3 km",
+   bio:"Grand seigneur cherche partenaire à la hauteur. Pedigree certifié LOOF.",
+   verified:false,pedigree:true,
+   photo:"https://images.unsplash.com/photo-1574144611937-0df059b5ef3e?w=500&q=80",
+   owner:"Lucas D."},
+  {id:6,name:"Bella",age:5,breed:"Labrador",type:"dog",distance:"4 km",
+   bio:"Maman expérimentée, douce et équilibrée 🌸 Excellente avec les enfants.",
+   verified:true,pedigree:true,
+   photo:"https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=500&q=80",
+   owner:"Julie R."},
+  {id:7,name:"Oscar",age:3,breed:"Beagle",type:"dog",distance:"6 km",
+   bio:"Curieux et joueur, toujours le nez en l'air ! Cherche une compagne aventurière.",
+   verified:true,pedigree:false,
+   photo:"https://images.unsplash.com/photo-1505628346881-b72b27e84530?w=500&q=80",
+   owner:"Pierre K."},
+  {id:8,name:"Mimi",age:1,breed:"British Shorthair",type:"cat",distance:"2 km",
+   bio:"Petite boule de poils bleu-gris, douce comme un nuage ☁️ Cherche un compagnon calme.",
+   verified:true,pedigree:true,
+   photo:"https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=500&q=80",
+   owner:"Emma V."},
+];
+
+const PLANS = [
+  {id:"free",name:"Gratuit",price:"0€",period:"",icon:"🐾",color:"#9CA3AF",
+   features:[{t:"Swipe illimité",ok:true},{t:"Messagerie basique",ok:true},{t:"Voir qui vous a liké",ok:false},{t:"Saillie chien de race",ok:false},{t:"Badge Vérifié",ok:false}]},
+  {id:"premium",name:"Premium",price:"9,99€",period:"/mois",icon:"💎",color:"#E8642A",popular:true,
+   features:[{t:"Swipe illimité",ok:true},{t:"Messagerie avancée",ok:true},{t:"Voir qui vous a liké ❤️",ok:true},{t:"Saillie chien de race",ok:false},{t:"Badge Vérifié",ok:true}]},
+  {id:"breeding",name:"Saillie Pro",price:"24,99€",period:"/mois",icon:"🏆",color:"#1A1A2E",
+   features:[{t:"Tout Premium inclus",ok:true},{t:"Annonces saillie illimitées",ok:true},{t:"Filtres race & pedigree",ok:true},{t:"Carnet de santé numérique",ok:true},{t:"Support prioritaire",ok:true}]},
+];
+
+const LIKES = [
+  {id:101,name:"Rex",breed:"Berger Allemand",photo:"https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?w=300&q=80",blurred:true},
+  {id:102,name:"Lily",breed:"Ragdoll",photo:"https://images.unsplash.com/photo-1561948955-570b270e7c36?w=300&q=80",blurred:true},
+  {id:103,name:"Thor",breed:"Rottweiler",photo:"https://images.unsplash.com/photo-1598133894008-61f7fdb8cc3a?w=300&q=80",blurred:true},
+  {id:104,name:"Perle",breed:"Bichon Frisé",photo:"https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=300&q=80",blurred:false},
+];
+
+/* ── LOGO SVG (patte orange) ── */
+const PawLogo = ({size=32}) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+    <ellipse cx="50" cy="62" rx="28" ry="24" fill="#E8642A"/>
+    <ellipse cx="26" cy="42" rx="10" ry="13" fill="#E8642A"/>
+    <ellipse cx="74" cy="42" rx="10" ry="13" fill="#E8642A"/>
+    <ellipse cx="38" cy="32" rx="8" ry="11" fill="#E8642A"/>
+    <ellipse cx="62" cy="32" rx="8" ry="11" fill="#E8642A"/>
+  </svg>
+);
+
+/* ── SCREEN: LOGIN ── */
+function LoginScreen({onLogin}) {
+  const [mode,setMode] = useState("login");
+  const [email,setEmail] = useState("");
+  const [pass,setPass] = useState("");
+
+  return (
+    <div style={{minHeight:"100vh",background:"white",display:"flex",flexDirection:"column",alignItems:"center",padding:"60px 28px 40px"}}>
+      {/* Logo */}
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+        <PawLogo size={48}/>
+        <span style={{fontSize:36,fontWeight:900,color:"#1A1A2E",letterSpacing:-1}}>TinDog</span>
+      </div>
+      <p style={{color:"#7C6F64",fontSize:15,marginBottom:40,textAlign:"center"}}>Trouvez le partenaire idéal pour votre animal 🐾</p>
+
+      {/* Tab toggle */}
+      <div style={{display:"flex",background:"#F0EDE8",borderRadius:14,padding:4,marginBottom:28,width:"100%"}}>
+        {["login","register"].map(m => (
+          <button key={m} onClick={()=>setMode(m)} style={{flex:1,padding:"12px 0",borderRadius:11,border:"none",background:mode===m?"white":"transparent",color:mode===m?"#1A1A2E":"#9CA3AF",fontWeight:700,fontSize:15,cursor:"pointer",boxShadow:mode===m?"0 2px 8px rgba(0,0,0,0.08)":"none",transition:"all 0.2s"}}>
+            {m==="login"?"Connexion":"Inscription"}
+          </button>
+        ))}
+      </div>
+
+      {/* Fields */}
+      <div style={{width:"100%",display:"flex",flexDirection:"column",gap:14,marginBottom:20}}>
+        <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" type="email"
+          style={{width:"100%",padding:"16px 18px",borderRadius:14,border:"1.5px solid #E8E0D8",background:"#F8F6F3",fontSize:16,color:"#1A1A2E"}}/>
+        <input value={pass} onChange={e=>setPass(e.target.value)} placeholder="Mot de passe" type="password"
+          style={{width:"100%",padding:"16px 18px",borderRadius:14,border:"1.5px solid #E8E0D8",background:"#F8F6F3",fontSize:16,color:"#1A1A2E"}}/>
+        {mode==="register" && (
+          <input placeholder="Confirmer le mot de passe" type="password"
+            style={{width:"100%",padding:"16px 18px",borderRadius:14,border:"1.5px solid #E8E0D8",background:"#F8F6F3",fontSize:16,color:"#1A1A2E"}}/>
+        )}
+      </div>
+
+      <button onClick={onLogin} style={{width:"100%",padding:"17px",borderRadius:14,border:"none",background:"#E8642A",color:"white",fontSize:17,fontWeight:800,cursor:"pointer",marginBottom:24,boxShadow:"0 4px 20px rgba(232,100,42,0.35)"}}>
+        {mode==="login"?"Se connecter":"Créer mon compte"}
+      </button>
+
+      <div style={{display:"flex",alignItems:"center",gap:12,width:"100%",marginBottom:20}}>
+        <div style={{flex:1,height:1,background:"#E8E0D8"}}/>
+        <span style={{color:"#B0A499",fontSize:14}}>ou</span>
+        <div style={{flex:1,height:1,background:"#E8E0D8"}}/>
+      </div>
+
+      <button onClick={onLogin} style={{width:"100%",padding:"15px",borderRadius:14,border:"1.5px solid #E8E0D8",background:"white",color:"#1A1A2E",fontSize:15,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+        <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continuer avec Google
+      </button>
+
+      {mode==="login" && (
+        <button style={{marginTop:16,background:"none",border:"none",color:"#E8642A",fontSize:14,fontWeight:600,cursor:"pointer"}}>Mot de passe oublié ?</button>
+      )}
+    </div>
+  );
+}
+
+/* ── MAIN APP ── */
+function App() {
+  const [screen,setScreen] = useState("login"); // login | main
+  const [tab,setTab] = useState("discover");
+  const [petIndex,setPetIndex] = useState(0);
+  const [swipeDir,setSwipeDir] = useState(null);
+  const [swipeX,setSwipeX] = useState(0);
+  const [match,setMatch] = useState(null);
+  const [activePlan,setActivePlan] = useState("free");
+  const [filter,setFilter] = useState("all");
+  const [showPaywall,setShowPaywall] = useState(false);
+  const [paywallType,setPaywallType] = useState("premium");
+  const [messages] = useState([
+    {id:1,from:"Bella",photo:"https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=100&q=80",text:"Woof! Tu veux jouer ? 🎾",time:"10:32",unread:true},
+    {id:2,from:"Cléo",photo:"https://images.unsplash.com/photo-1518791841217-8f162f1912da?w=100&q=80",text:"Miaou... je t'attends 😺",time:"Hier",unread:false},
+  ]);
+
+  const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
+
+  const filteredPets = PETS.filter(p => filter==="all" || p.type===filter);
+  const pet = filteredPets[petIndex] || null;
+
+  const handleTouchStart = e => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+  const handleTouchMove = e => {
+    if(!touchStartX.current) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    setSwipeX(dx);
+  };
+  const handleTouchEnd = e => {
+    const dx = e.changedTouches[0].clientX - (touchStartX.current||0);
+    touchStartX.current = null;
+    setSwipeX(0);
+    if(Math.abs(dx)>70) doSwipe(dx>0?"right":"left");
+  };
+
+  const doSwipe = dir => {
+    if(!pet) return;
+    setSwipeDir(dir);
+    setTimeout(()=>{
+      setSwipeDir(null);
+      if(dir==="right" && Math.random()>0.45) setMatch(pet);
+      else setPetIndex(i=>i+1);
+    },420);
+  };
+
+  const closeMatch = () => { setMatch(null); setPetIndex(i=>i+1); };
+  const openPaywall = type => { setPaywallType(type); setShowPaywall(true); };
+  const subscribeTo = id => { setActivePlan(id); setShowPaywall(false); };
+
+  const W = Math.min(window.innerWidth,430);
+  const H = window.innerHeight;
+  const isMobile = window.innerWidth <= 430;
+
+  if(screen==="login") return (
+    <div style={{width:W,minHeight:H}}>
+      <LoginScreen onLogin={()=>setScreen("main")}/>
+    </div>
+  );
+
+  /* card rotation based on swipe */
+  const cardRotate = swipeDir==="left" ? -15 : swipeDir==="right" ? 15 : swipeX/20;
+  const cardTX = swipeDir==="left" ? -W*1.2 : swipeDir==="right" ? W*1.2 : swipeX;
+
+  return (
+    <div style={{width:W,height:H,background:"#F8F5F1",display:"flex",flexDirection:"column",position:"relative",overflow:"hidden"}}>
+
+      {/* ── HEADER ── */}
+      <div style={{background:"white",padding:"48px 20px 12px",display:"flex",justifyContent:"space-between",alignItems:"center",boxShadow:"0 1px 0 #EDE8E2",flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <PawLogo size={28}/>
+          <span style={{fontSize:22,fontWeight:900,color:"#1A1A2E",letterSpacing:-0.5}}>TinDog</span>
+        </div>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          {activePlan==="free"
+            ? <button onClick={()=>openPaywall("premium")} style={{background:"#E8642A",border:"none",borderRadius:20,padding:"7px 14px",color:"white",fontSize:12,fontWeight:700,cursor:"pointer",boxShadow:"0 2px 10px rgba(232,100,42,0.3)"}}>💎 Premium</button>
+            : <div style={{background:"#FFF0E8",borderRadius:20,padding:"7px 14px",color:"#E8642A",fontSize:12,fontWeight:700}}>{activePlan==="premium"?"💎 Premium":"🏆 Saillie Pro"}</div>
+          }
+          <div style={{width:36,height:36,borderRadius:18,background:"#F0EDE8",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,cursor:"pointer"}}>⚙️</div>
+        </div>
+      </div>
+
+      {/* ── CONTENT ── */}
+      <div style={{flex:1,overflow:"hidden",position:"relative"}}>
+
+        {/* DISCOVER */}
+        {tab==="discover" && (
+          <div style={{height:"100%",display:"flex",flexDirection:"column",padding:"12px 16px 0"}}>
+            {/* Filter pills */}
+            <div style={{display:"flex",gap:8,marginBottom:12,flexShrink:0}}>
+              {[["all","🐾 Tous"],["dog","🐕 Chiens"],["cat","🐱 Chats"]].map(([f,l])=>(
+                <button key={f} onClick={()=>{setFilter(f);setPetIndex(0);}} style={{background:filter===f?"#E8642A":"white",border:filter===f?"none":"1.5px solid #E8E0D8",borderRadius:20,padding:"7px 16px",color:filter===f?"white":"#7C6F64",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:filter===f?"0 2px 10px rgba(232,100,42,0.25)":"none"}}>
+                  {l}
+                </button>
+              ))}
+            </div>
+
+            {pet ? (
+              <div style={{flex:1,display:"flex",flexDirection:"column",position:"relative"}}>
+                {/* CARD */}
+                <div
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  style={{flex:1,borderRadius:24,overflow:"hidden",position:"relative",boxShadow:"0 8px 40px rgba(0,0,0,0.13)",transform:`rotate(${cardRotate}deg) translateX(${cardTX}px)`,transition:swipeDir?"transform 0.42s ease,opacity 0.42s":"transform 0.1s ease",opacity:swipeDir?0:1,cursor:"grab",userSelect:"none",maxHeight:"68vh"}}>
+                  <img src={pet.photo} alt={pet.name} style={{width:"100%",height:"100%",objectFit:"cover",display:"block",pointerEvents:"none"}}
+                    onError={e=>{e.target.style.background="#F0EDE8";e.target.style.display="flex";}}/>
+
+                  {/* Gradient overlay */}
+                  <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.75) 100%)"}}/>
+
+                  {/* Badges */}
+                  <div style={{position:"absolute",top:14,left:14,display:"flex",gap:6}}>
+                    {pet.verified && <div style={{background:"rgba(255,255,255,0.92)",borderRadius:20,padding:"4px 10px",color:"#16A34A",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",gap:4}}><span>✓</span> Vérifié</div>}
+                    {pet.pedigree && <div style={{background:"rgba(255,255,255,0.92)",borderRadius:20,padding:"4px 10px",color:"#E8642A",fontSize:11,fontWeight:700}}>🏅 Pedigree</div>}
+                  </div>
+
+                  {/* Swipe hints */}
+                  {(swipeX > 40 || swipeDir==="right") && (
+                    <div style={{position:"absolute",top:24,left:20,border:"3px solid #4ADE80",borderRadius:12,padding:"6px 16px",color:"#4ADE80",fontSize:24,fontWeight:900,transform:"rotate(-12deg)",background:"rgba(0,0,0,0.2)"}}>J'aime ❤️</div>
+                  )}
+                  {(swipeX < -40 || swipeDir==="left") && (
+                    <div style={{position:"absolute",top:24,right:20,border:"3px solid #F87171",borderRadius:12,padding:"6px 16px",color:"#F87171",fontSize:24,fontWeight:900,transform:"rotate(12deg)",background:"rgba(0,0,0,0.2)"}}>Passer ✕</div>
+                  )}
+
+                  {/* Info */}
+                  <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px 18px 18px"}}>
+                    <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:3}}>
+                      <span style={{color:"white",fontSize:26,fontWeight:800}}>{pet.name}</span>
+                      <span style={{color:"rgba(255,255,255,0.8)",fontSize:18,fontWeight:600}}>{pet.age} ans</span>
+                    </div>
+                    <div style={{color:"rgba(255,255,255,0.7)",fontSize:13,marginBottom:6,display:"flex",gap:12}}>
+                      <span>🐾 {pet.breed}</span><span>📍 {pet.distance}</span>
+                    </div>
+                    <p style={{color:"rgba(255,255,255,0.85)",fontSize:13,lineHeight:1.5,margin:0}}>{pet.bio}</p>
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:16,padding:"14px 0 8px",flexShrink:0}}>
+                  <button onClick={()=>doSwipe("left")} style={{width:58,height:58,borderRadius:29,background:"white",border:"2px solid #FECACA",fontSize:22,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.08)",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+                  <button onClick={()=>openPaywall("premium")} style={{width:46,height:46,borderRadius:23,background:"white",border:"2px solid #FDE68A",fontSize:18,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.08)",display:"flex",alignItems:"center",justifyContent:"center"}}>⭐</button>
+                  <button onClick={()=>doSwipe("right")} style={{width:58,height:58,borderRadius:29,background:"linear-gradient(135deg,#E8642A,#FF8E53)",border:"none",fontSize:22,cursor:"pointer",boxShadow:"0 4px 20px rgba(232,100,42,0.4)",display:"flex",alignItems:"center",justifyContent:"center"}}>❤️</button>
+                </div>
+                <p style={{textAlign:"center",color:"#C4B5A0",fontSize:11,paddingBottom:6}}>Glisse la carte ou utilise les boutons</p>
+              </div>
+            ) : (
+              <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12}}>
+                <PawLogo size={60}/>
+                <p style={{color:"#9CA3AF",textAlign:"center",fontSize:15}}>Plus de profils disponibles.<br/>Revenez plus tard !</p>
+                <button onClick={()=>setPetIndex(0)} style={{background:"#E8642A",border:"none",borderRadius:20,padding:"12px 28px",color:"white",fontWeight:700,cursor:"pointer",fontSize:15}}>Recommencer</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* LIKES */}
+        {tab==="likes" && (
+          <div style={{height:"100%",overflowY:"auto",padding:"16px"}}>
+            <h2 style={{color:"#1A1A2E",fontSize:20,fontWeight:800,marginBottom:6}}>❤️ Qui vous a liké</h2>
+            {activePlan==="free" && (
+              <div style={{background:"#FFF8F5",border:"1.5px solid #FDDDD0",borderRadius:16,padding:"14px 16px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div>
+                  <p style={{color:"#E8642A",fontSize:13,margin:0,fontWeight:700}}>💎 Débloquez vos likes</p>
+                  <p style={{color:"#9CA3AF",fontSize:12,margin:"2px 0 0"}}>Passez Premium pour les voir</p>
+                </div>
+                <button onClick={()=>openPaywall("premium")} style={{background:"#E8642A",border:"none",borderRadius:14,padding:"9px 16px",color:"white",fontSize:13,fontWeight:700,cursor:"pointer"}}>Voir</button>
+              </div>
+            )}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              {LIKES.map(l=>(
+                <div key={l.id} style={{background:"white",borderRadius:20,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.06)",position:"relative"}}>
+                  <div style={{height:140,overflow:"hidden",position:"relative"}}>
+                    <img src={l.photo} alt={l.name} style={{width:"100%",height:"100%",objectFit:"cover",filter:(l.blurred&&activePlan==="free")?"blur(14px) brightness(0.8)":"none"}}/>
+                    {l.blurred&&activePlan==="free"&&(
+                      <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        <div style={{background:"rgba(255,255,255,0.9)",borderRadius:50,width:44,height:44,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,boxShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>🔒</div>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{padding:"10px 12px"}}>
+                    <p style={{color:"#1A1A2E",margin:0,fontWeight:700,fontSize:14}}>{l.blurred&&activePlan==="free"?"???":l.name}</p>
+                    <p style={{color:"#9CA3AF",margin:0,fontSize:11}}>{l.breed}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* MESSAGES */}
+        {tab==="messages" && (
+          <div style={{height:"100%",overflowY:"auto",padding:"16px"}}>
+            <h2 style={{color:"#1A1A2E",fontSize:20,fontWeight:800,marginBottom:16}}>💬 Messages</h2>
+            {messages.map(m=>(
+              <div key={m.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:"white",borderRadius:18,marginBottom:10,cursor:"pointer",boxShadow:"0 2px 10px rgba(0,0,0,0.05)",border:m.unread?"1.5px solid #FDDDD0":"1.5px solid transparent"}}>
+                <img src={m.photo} alt={m.from} style={{width:52,height:52,borderRadius:26,objectFit:"cover",flexShrink:0,border:"2px solid #F0EDE8"}}/>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",justifyContent:"space-between"}}>
+                    <span style={{color:"#1A1A2E",fontWeight:700,fontSize:15}}>{m.from}</span>
+                    <span style={{color:"#C4B5A0",fontSize:11}}>{m.time}</span>
+                  </div>
+                  <p style={{color:"#9CA3AF",fontSize:13,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.text}</p>
+                </div>
+                {m.unread&&<div style={{width:10,height:10,borderRadius:5,background:"#E8642A",flexShrink:0}}/>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* PLANS */}
+        {tab==="subscription" && (
+          <div style={{height:"100%",overflowY:"auto",padding:"16px 16px 24px"}}>
+            <h2 style={{color:"#1A1A2E",fontSize:20,fontWeight:800,marginBottom:4}}>🏅 Abonnements</h2>
+            <p style={{color:"#9CA3AF",fontSize:13,marginBottom:16}}>Choisissez le plan de votre compagnon</p>
+            {PLANS.map(plan=>(
+              <div key={plan.id} style={{background:activePlan===plan.id?"#FFF8F5":"white",border:`2px solid ${activePlan===plan.id?"#E8642A":"#EDE8E2"}`,borderRadius:20,padding:"18px",marginBottom:14,position:"relative",boxShadow:"0 2px 12px rgba(0,0,0,0.05)"}}>
+                {plan.popular&&<div style={{position:"absolute",top:-11,right:16,background:"#E8642A",borderRadius:10,padding:"3px 14px",color:"white",fontSize:11,fontWeight:800}}>⭐ POPULAIRE</div>}
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+                  <div>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                      <span style={{fontSize:22}}>{plan.icon}</span>
+                      <span style={{color:"#1A1A2E",fontWeight:800,fontSize:17}}>{plan.name}</span>
+                    </div>
+                    <div style={{display:"flex",alignItems:"baseline",gap:3}}>
+                      <span style={{color:plan.id==="free"?"#9CA3AF":"#E8642A",fontSize:26,fontWeight:900}}>{plan.price}</span>
+                      <span style={{color:"#C4B5A0",fontSize:13}}>{plan.period}</span>
+                    </div>
+                  </div>
+                  {activePlan===plan.id
+                    ? <div style={{background:"#FFF0E8",border:"1.5px solid #E8642A",borderRadius:12,padding:"5px 14px",color:"#E8642A",fontSize:13,fontWeight:700}}>✓ Actif</div>
+                    : <button onClick={()=>subscribeTo(plan.id)} style={{background:plan.id==="free"?"#F0EDE8":plan.id==="premium"?"#E8642A":"#1A1A2E",border:"none",borderRadius:12,padding:"9px 18px",color:plan.id==="free"?"#7C6F64":"white",fontSize:13,fontWeight:700,cursor:"pointer"}}>Choisir</button>
+                  }
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {plan.features.map((f,i)=>(
+                    <div key={i} style={{display:"flex",alignItems:"center",gap:10}}>
+                      <span style={{fontSize:15,flexShrink:0}}>{f.ok?"✅":"❌"}</span>
+                      <span style={{color:f.ok?"#374151":"#C4B5A0",fontSize:13}}>{f.t}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── BOTTOM NAV ── */}
+      <div style={{background:"white",borderTop:"1px solid #EDE8E2",display:"flex",justifyContent:"space-around",alignItems:"center",padding:"10px 0 24px",flexShrink:0}}>
+        {[["discover","🐾","Découvrir"],["likes","❤️","Likes"],["messages","💬","Messages"],["subscription","🏅","Plans"]].map(([id,icon,label])=>(
+          <button key={id} onClick={()=>setTab(id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,background:"none",border:"none",cursor:"pointer",padding:"4px 16px",position:"relative"}}>
+            <span style={{fontSize:22,opacity:tab===id?1:0.35,transition:"opacity 0.2s"}}>{icon}</span>
+            <span style={{fontSize:10,fontWeight:700,color:tab===id?"#E8642A":"#C4B5A0"}}>{label}</span>
+            {tab===id&&<div style={{position:"absolute",bottom:-2,width:20,height:3,borderRadius:2,background:"#E8642A"}}/>}
+          </button>
+        ))}
+      </div>
+
+      {/* ── MATCH OVERLAY ── */}
+      {match&&(
+        <div style={{position:"absolute",inset:0,background:"rgba(255,255,255,0.97)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:200,padding:32}}>
+          <div style={{fontSize:56,marginBottom:8}}>🎉</div>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+            <PawLogo size={28}/>
+            <h2 style={{fontSize:28,fontWeight:900,color:"#E8642A",margin:0}}>C'est un Match !</h2>
+          </div>
+          <p style={{color:"#7C6F64",textAlign:"center",fontSize:15,marginBottom:24}}>
+            Vous et <strong style={{color:"#1A1A2E"}}>{match.name}</strong> vous avez mutuellement flashé 🐾
+          </p>
+          <div style={{width:130,height:130,borderRadius:65,overflow:"hidden",border:"4px solid #E8642A",boxShadow:"0 8px 32px rgba(232,100,42,0.3)",marginBottom:28}}>
+            <img src={match.photo} alt={match.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+          </div>
+          <div style={{display:"flex",gap:12}}>
+            <button onClick={closeMatch} style={{background:"#F0EDE8",border:"none",borderRadius:20,padding:"13px 22px",color:"#7C6F64",fontWeight:700,cursor:"pointer",fontSize:14}}>Continuer</button>
+            <button onClick={()=>{closeMatch();setTab("messages");}} style={{background:"#E8642A",border:"none",borderRadius:20,padding:"13px 22px",color:"white",fontWeight:700,cursor:"pointer",fontSize:14,boxShadow:"0 4px 16px rgba(232,100,42,0.35)"}}>💬 Envoyer un message</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── PAYWALL OVERLAY ── */}
+      {showPaywall&&(
+        <div style={{position:"absolute",inset:0,background:"rgba(255,255,255,0.98)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:200,padding:28}}>
+          <button onClick={()=>setShowPaywall(false)} style={{position:"absolute",top:52,right:20,background:"#F0EDE8",border:"none",borderRadius:20,width:38,height:38,color:"#9CA3AF",fontSize:16,cursor:"pointer"}}>✕</button>
+          {paywallType==="premium"?(
+            <>
+              <div style={{fontSize:54,marginBottom:10}}>💎</div>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><PawLogo size={22}/><h2 style={{color:"#1A1A2E",fontSize:24,fontWeight:900,margin:0}}>TinDog Premium</h2></div>
+              <p style={{color:"#7C6F64",textAlign:"center",fontSize:14,marginBottom:24}}>Découvrez tous ceux qui ont flashé sur votre compagnon</p>
+              <div style={{width:"100%",background:"#F8F5F1",borderRadius:18,padding:20,marginBottom:20}}>
+                {["Voir tous vos likes 👀","Super Likes illimités ⭐","Badge Vérifié ✓","Rewind — annuler un swipe ↩️"].map((f,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:10,marginBottom:i<3?10:0}}>
+                    <div style={{width:8,height:8,borderRadius:4,background:"#E8642A",flexShrink:0}}/>
+                    <span style={{color:"#374151",fontSize:14}}>{f}</span>
+                  </div>
+                ))}
+              </div>
+              <button onClick={()=>subscribeTo("premium")} style={{width:"100%",background:"#E8642A",border:"none",borderRadius:16,padding:"17px",color:"white",fontSize:17,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 20px rgba(232,100,42,0.35)"}}>S'abonner — 9,99€/mois</button>
+            </>
+          ):(
+            <>
+              <div style={{fontSize:54,marginBottom:10}}>🏆</div>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><PawLogo size={22}/><h2 style={{color:"#1A1A2E",fontSize:24,fontWeight:900,margin:0}}>Saillie Pro</h2></div>
+              <p style={{color:"#7C6F64",textAlign:"center",fontSize:14,marginBottom:24}}>Pour les éleveurs et passionnés de races pures</p>
+              <div style={{width:"100%",background:"#F8F5F1",borderRadius:18,padding:20,marginBottom:20}}>
+                {["Annonces saillie illimitées 🐕","Filtre race & LOF/pedigree 📋","Carnet de santé numérique 🏥","Mise en avant des profils ⭐","Support éleveur prioritaire 📞"].map((f,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:10,marginBottom:i<4?10:0}}>
+                    <div style={{width:8,height:8,borderRadius:4,background:"#1A1A2E",flexShrink:0}}/>
+                    <span style={{color:"#374151",fontSize:14}}>{f}</span>
+                  </div>
+                ))}
+              </div>
+              <button onClick={()=>subscribeTo("breeding")} style={{width:"100%",background:"#1A1A2E",border:"none",borderRadius:16,padding:"17px",color:"white",fontSize:17,fontWeight:800,cursor:"pointer"}}>S'abonner — 24,99€/mois</button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
